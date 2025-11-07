@@ -52,27 +52,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
+    let mounted = true
+    let timeoutId: NodeJS.Timeout
+
     const initializeAuth = async () => {
       console.log('[Auth] Starting authentication initialization')
+
+      const hardTimeout = setTimeout(() => {
+        if (mounted) {
+          console.warn('[Auth] Hard timeout reached - forcing loading state to false')
+          setLoading(false)
+        }
+      }, 5000)
+
       try {
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Auth initialization timeout')), 10000)
-        )
+        const { data: { session }, error } = await supabase.auth.getSession()
 
-        const authPromise = supabase.auth.getSession()
-
-        const { data: { session } } = await Promise.race([
-          authPromise,
-          timeoutPromise
-        ]) as any
+        if (error) {
+          console.error('[Auth] Session error:', error.message)
+          if (mounted) setLoading(false)
+          clearTimeout(hardTimeout)
+          return
+        }
 
         console.log('[Auth] Session retrieved:', session ? 'User logged in' : 'No active session')
 
-        if (session?.user) {
+        if (session?.user && mounted) {
           setUser(session.user)
           const profileData = await fetchProfile(session.user.id)
-          setProfile(profileData)
-          console.log('[Auth] Profile loaded:', profileData?.full_name || 'No name')
+          if (mounted) {
+            setProfile(profileData)
+            console.log('[Auth] Profile loaded:', profileData?.full_name || 'No name')
+          }
         }
       } catch (error) {
         console.error('[Auth] Error initializing auth:', {
@@ -80,8 +91,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           error: error
         })
       } finally {
-        console.log('[Auth] Initialization complete, setting loading to false')
-        setLoading(false)
+        clearTimeout(hardTimeout)
+        if (mounted) {
+          console.log('[Auth] Initialization complete, setting loading to false')
+          setLoading(false)
+        }
       }
     }
 
@@ -103,7 +117,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     )
 
-    return () => subscription.unsubscribe()
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [])
 
   const signIn = async (email: string, password: string) => {
