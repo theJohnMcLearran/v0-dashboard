@@ -109,14 +109,14 @@ function NewRequestContent() {
           status: 'new' as RequestStatus,
           due_date: dueDate ? dueDate.toISOString() : null,
           created_by: user.id,
-        })
+        } as any)
         .select()
         .single()
 
       if (error) throw error
 
       toast.success('Request created successfully!')
-      router.push(`/reque/request/${data.id}`)
+      router.push(`/reque/request/${(data as any).id}`)
     } catch (error) {
       console.error('Error creating request:', error)
       toast.error('Failed to create request')

@@ -55,34 +55,53 @@ export interface RequestActivity {
   created_at: string
 }
 
-export interface Database {
+export type Database = {
   public: {
     Tables: {
       profiles: {
         Row: Profile
         Insert: Omit<Profile, 'created_at' | 'updated_at'>
         Update: Partial<Omit<Profile, 'id' | 'created_at'>>
+        Relationships: []
       }
       requests: {
         Row: Request
         Insert: Omit<Request, 'id' | 'created_at' | 'updated_at'>
         Update: Partial<Omit<Request, 'id' | 'created_at'>>
+        Relationships: []
       }
       request_attachments: {
         Row: RequestAttachment
         Insert: Omit<RequestAttachment, 'id' | 'created_at'>
         Update: Partial<Omit<RequestAttachment, 'id' | 'created_at'>>
+        Relationships: []
       }
       request_comments: {
         Row: RequestComment
         Insert: Omit<RequestComment, 'id' | 'created_at' | 'updated_at'>
         Update: Partial<Omit<RequestComment, 'id' | 'created_at'>>
+        Relationships: []
       }
       request_activity: {
         Row: RequestActivity
         Insert: Omit<RequestActivity, 'id' | 'created_at'>
         Update: Partial<Omit<RequestActivity, 'id' | 'created_at'>>
+        Relationships: []
       }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      user_role: UserRole
+      request_status: RequestStatus
+      request_priority: RequestPriority
+    }
+    CompositeTypes: {
+      [_ in never]: never
     }
   }
 }

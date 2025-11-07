@@ -37,7 +37,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { usePermissions } from '@/hooks/use-permissions'
 import { toast } from 'sonner'
 import { Edit, Trash2, Calendar, User, Clock } from 'lucide-react'
-import type { Request, RequestComment, RequestActivity, Profile, RequestStatus, RequestPriority } from '@/lib/supabase/types'
+import type { Request, RequestComment, RequestActivity, Profile, RequestStatus, RequestPriority, Database } from '@/lib/supabase/types'
 
 export default function RequestDetailPage() {
   return (
@@ -77,21 +77,25 @@ function RequestDetailContent() {
         supabase.from('request_activity').select('*').eq('request_id', requestId).order('created_at', { ascending: false }),
       ])
 
-      if (!requestData) {
+      const typedRequestData = requestData as Request | null
+      const typedCommentsData = commentsData as RequestComment[] | null
+      const typedActivityData = activityData as RequestActivity[] | null
+
+      if (!typedRequestData) {
         toast.error('Request not found')
         router.push('/reque/my-requests')
         return
       }
 
-      setRequest(requestData)
-      setComments(commentsData || [])
-      setActivity(activityData || [])
+      setRequest(typedRequestData)
+      setComments(typedCommentsData || [])
+      setActivity(typedActivityData || [])
 
       const userIds = new Set<string>([
-        requestData.created_by,
-        ...(requestData.assigned_to ? [requestData.assigned_to] : []),
-        ...(commentsData || []).map((c) => c.user_id),
-        ...(activityData || []).map((a) => a.user_id),
+        typedRequestData.created_by,
+        ...(typedRequestData.assigned_to ? [typedRequestData.assigned_to] : []),
+        ...(typedCommentsData || []).map((c) => c.user_id),
+        ...(typedActivityData || []).map((a) => a.user_id),
       ])
 
       const { data: profilesData } = await supabase
@@ -99,8 +103,10 @@ function RequestDetailContent() {
         .select('*')
         .in('id', Array.from(userIds))
 
+      const typedProfilesData = profilesData as Profile[] | null
+
       const profilesMap = new Map<string, Profile>()
-      profilesData?.forEach((profile) => {
+      typedProfilesData?.forEach((profile) => {
         profilesMap.set(profile.id, profile)
       })
       setProfiles(profilesMap)
@@ -116,8 +122,8 @@ function RequestDetailContent() {
     if (!request || !user) return
 
     try {
-      const { error } = await supabase
-        .from('requests')
+      const { error } = await (supabase
+        .from('requests') as any)
         .update({ status: newStatus })
         .eq('id', request.id)
 
@@ -136,8 +142,8 @@ function RequestDetailContent() {
     if (!request || !user) return
 
     try {
-      const { error } = await supabase
-        .from('requests')
+      const { error } = await (supabase
+        .from('requests') as any)
         .update({ priority: newPriority })
         .eq('id', request.id)
 
@@ -164,7 +170,7 @@ function RequestDetailContent() {
           request_id: request.id,
           user_id: user.id,
           comment_text: commentText.trim(),
-        })
+        } as any)
 
       if (error) throw error
 
