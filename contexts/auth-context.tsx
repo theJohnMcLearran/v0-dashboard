@@ -32,7 +32,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .maybeSingle()
 
     if (error) {
-      console.error('Error fetching profile:', error)
+      console.error('Error fetching profile:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      })
       return null
     }
 
@@ -57,7 +62,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setProfile(profileData)
         }
       } catch (error) {
-        console.error('Error initializing auth:', error)
+        console.error('Error initializing auth:', {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          error: error
+        })
       } finally {
         setLoading(false)
       }
